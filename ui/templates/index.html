@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Study Sentinel — Clinical Study Surveillance Platform (ATLAS → MONITOR → WATCH)</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Vis.js for Network Knowledge Graph Visualizations -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <!-- Chart.js for 12-Cut Trends & Budget Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="logo-container">
+      <span class="logo-badge">STUDY-042</span>
+      <div>
+        <h1 class="logo-title">Study Sentinel Surveillance Platform</h1>
+        <div class="logo-subtitle">Integrated Clinical AI: ATLAS (Graph) → MONITOR (Crew) → WATCH (12-Cut Surveillance)</div>
+      </div>
+    </div>
+
+    <!-- 5-Minute Quick Tour Button -->
+    <div class="header-actions">
+      <button class="btn btn-primary demo-tour-btn" id="btn-start-tour" onclick="start5MinTour()">
+        <span>▶ 5-Min Judge Tour</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Page Navigation Tabs -->
+  <nav class="nav-bar">
+    <button class="nav-tab active" data-tab="overview">1. Overview</button>
+    <button class="nav-tab" data-tab="graph-view">2. Study Graph</button>
+    <button class="nav-tab" data-tab="patient-graph">3. Patient Study Graph</button>
+    <button class="nav-tab" data-tab="timeline">4. Cut Timeline</button>
+    <button class="nav-tab" data-tab="findings">5. Findings</button>
+    <button class="nav-tab" data-tab="human-gate">6. Human Gate</button>
+    <button class="nav-tab" data-tab="cycle-report">7. Cycle Report</button>
+    <button class="nav-tab" data-tab="trace">8. Trace</button>
+    <button class="nav-tab" data-tab="explain">9. Explain Decision</button>
+    <button class="nav-tab" data-tab="site-risk">10. Site Risk</button>
+    <button class="nav-tab" data-tab="adversarial">11. Adversarial Events</button>
+    <button class="nav-tab" data-tab="budget">12. Budget</button>
+  </nav>
+
+
+  <!-- Global Metrics Summary Strip -->
+  <div class="metrics-grid">
+    <div class="metric-card info">
+      <span class="metric-label">Surveillance Cut</span>
+      <span class="metric-value" id="m-cut">Cut 12</span>
+      <span class="metric-sub" id="m-pv">Protocol Version 3</span>
+    </div>
+
+    <div class="metric-card danger">
+      <span class="metric-label">Clinical Escalations</span>
+      <span class="metric-value" id="m-escalations">0</span>
+      <span class="metric-sub" id="m-esc-sub">0 Approved | 0 Pending</span>
+    </div>
+
+    <div class="metric-card warning">
+      <span class="metric-label">Data Queries</span>
+      <span class="metric-value" id="m-queries">0</span>
+      <span class="metric-sub" id="m-q-sub">0 Open Action Items</span>
+    </div>
+
+    <div class="metric-card cyan">
+      <span class="metric-label">Compliance Deviations</span>
+      <span class="metric-value" id="m-deviations">0</span>
+      <span class="metric-sub">Protocol v1/v2/v3 Audited</span>
+    </div>
+
+    <div class="metric-card purple">
+      <span class="metric-label">Adversarial Anomalies</span>
+      <span class="metric-value" id="m-adversarial">0</span>
+      <span class="metric-sub">Quarantined for Integrity</span>
+    </div>
+
+    <div class="metric-card success">
+      <span class="metric-label">Budget Tier</span>
+      <span class="metric-value" id="m-budget-tier">FULL</span>
+      <span class="metric-sub" id="m-budget-time">0.0s Elapsed</span>
+    </div>
+  </div>
+
+  <!-- Interactive 12-Cut Selector Bar -->
+  <div class="timeline-bar-card">
+    <div class="timeline-bar-header">
+      <span class="timeline-bar-title">Active Surveillance Horizon: 12 Weekly Protocol Cycles</span>
+      <span class="badge badge-success" id="active-cut-badge">Active Cut: 12 (Protocol v3)</span>
+    </div>
+    <div class="cuts-bar" id="cuts-buttons-container">
+      <!-- Generated dynamically in app.js -->
+    </div>
+  </div>
+
+  <!-- Main Content Container -->
+  <main>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 1: OVERVIEW -->
+    <!-- ========================================================================= -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="split-layout">
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Current Study Status & Safety Posture</span>
+            <span class="badge badge-success" id="overview-status-badge">OPERATIONAL</span>
+          </div>
+          <div class="overview-metrics-summary">
+            <div class="overview-stat-row">
+              <span class="stat-name">Active Horizon:</span>
+              <span class="stat-val">12 Cuts (Weekly Protocol Surveillance)</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">Active Protocol Version:</span>
+              <span class="stat-val" id="ov-pv">Protocol Version 3 (Effective Cut 9)</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">Critical Safety Escalations:</span>
+              <span class="stat-val text-danger" id="ov-crit-esc">0 Approved Dosing Holds</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">Observational Monitoring Findings:</span>
+              <span class="stat-val text-info" id="ov-mon-findings">0 Subjects Monitored</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">Open Site Queries:</span>
+              <span class="stat-val text-warning" id="ov-open-q">0 Requiring Site Clarification</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">Retroactive Corrections Handled:</span>
+              <span class="stat-val text-success" id="ov-corrections">200 Records Updated Dynamically</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">Immutable Audit Trace Log:</span>
+              <span class="stat-val" id="ov-trace-count">1662 Total Decisions Audited</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-title">12-Cut Surveillance Activity Breakdown</div>
+          <div style="height: 250px;">
+            <canvas id="overviewMiniChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-card" style="margin-top: 18px;">
+        <div class="panel-title">
+          <span>Active Cut Highlights</span>
+          <span class="badge badge-info" id="ov-cut-title">Cut 12 Summary</span>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Identifier</th>
+                <th>Subject</th>
+                <th>Site</th>
+                <th>Severity</th>
+                <th>Status</th>
+                <th>Details / Rationale</th>
+              </tr>
+            </thead>
+            <tbody id="overview-highlights-tbody">
+              <tr><td colspan="7" style="text-align: center;">Loading cut highlights...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 2: STUDY GRAPH -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-graph-view">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Relational Knowledge Graph Reasoning Explorer (Study → Sites → Subjects → Visits / Labs / AE / CM)</span>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="graph-subject-select" class="btn btn-secondary" style="padding: 6px 14px; min-width: 220px;">
+              <option value="">Select Study Subject...</option>
+            </select>
+            <button class="btn btn-primary" id="btn-refresh-graph">Load Subgraph</button>
+          </div>
+        </div>
+
+        <div class="graph-layout">
+          <div id="graph-container"></div>
+          
+          <!-- Subject Details Inspector Panel -->
+          <div class="graph-inspector" id="graph-inspector">
+            <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--accent-primary);">Subject Inspector</h3>
+            <div id="inspector-details">
+              <p style="color: var(--text-muted); font-size: 13px;">Select a subject above or click a node in the graph to inspect clinical history, first dose, lab panels, adverse events, medications, findings, and escalations.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="graph-legend">
+          <div class="legend-item"><span class="legend-dot" style="background: #38bdf8;"></span> Site</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #818cf8;"></span> Subject</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #34d399;"></span> Dose / Visit</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #fbbf24;"></span> Lab Result</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #f87171;"></span> Adverse Event (AE)</div>
+          <div class="legend-item"><span class="legend-dot" style="background: #a78bfa;"></span> Medication (CM)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 3: PATIENT STUDY GRAPH -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-patient-graph">
+      
+      <!-- Patient Search Header Card -->
+      <div class="panel-card" style="margin-bottom: 18px;">
+        <div class="panel-title">
+          <span>PATIENT STUDY GRAPH</span>
+          <span class="badge badge-info">ATLAS → MONITOR → WATCH Intelligence</span>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <label for="psg-patient-id-input" style="font-weight: 600; font-size: 13px; color: var(--text-muted);">Patient ID:</label>
+          <input type="text" id="psg-patient-id-input" placeholder="e.g. 042-S02-004" class="btn btn-secondary" style="width: 260px; text-align: left; padding: 8px 14px; font-family: var(--font-mono); font-size: 14px;">
+          <button class="btn btn-primary" id="psg-btn-search" style="padding: 8px 20px; font-size: 13px;">Search Patient</button>
+          
+          <div style="display: flex; gap: 8px; align-items: center; margin-left: auto; flex-wrap: wrap;">
+            <span style="font-size: 12px; color: var(--text-muted);">Quick Samples:</span>
+            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="quickSearchPatient('042-S02-004')">042-S02-004</button>
+            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="quickSearchPatient('042-S01-001')">042-S01-001</button>
+            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="quickSearchPatient('042-S04-003')">042-S04-003</button>
+            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="quickSearchPatient('042-S07-001')">042-S07-001</button>
+          </div>
+        </div>
+
+        <!-- Alert / Feedback Banner -->
+        <div id="psg-alert-banner" class="budget-alert-box" style="display: none; margin-top: 14px;"></div>
+      </div>
+
+      <!-- Main Patient Content Container (Hidden until search) -->
+      <div id="psg-patient-content" style="display: none; flex-direction: column; gap: 18px;">
+
+        <!-- 1. Patient Overview Cards -->
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Patient Overview</span>
+            <span class="badge badge-success" id="psg-status-badge">MONITORING</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-top: 6px;">
+            <div style="background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Patient ID</div>
+              <div style="font-size: 18px; font-weight: 800; color: white; font-family: var(--font-mono); margin-top: 2px;" id="psg-card-id">042-S02-004</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Site</div>
+              <div style="font-size: 18px; font-weight: 800; color: #38bdf8; margin-top: 2px;" id="psg-card-site">S02</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Study</div>
+              <div style="font-size: 18px; font-weight: 800; color: white; margin-top: 2px;" id="psg-card-study">042</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Protocol Version</div>
+              <div style="font-size: 18px; font-weight: 800; color: #a5b4fc; margin-top: 2px;" id="psg-card-pv">v3</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Current Cut</div>
+              <div style="font-size: 18px; font-weight: 800; color: #34d399; margin-top: 2px;" id="psg-card-cut">8</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Status</div>
+              <div style="font-size: 18px; font-weight: 800; color: #fbbf24; margin-top: 2px;" id="psg-card-status">Monitoring</div>
+            </div>
+          </div>
+
+          <!-- Monitoring Summary Strip -->
+          <div style="display: flex; justify-content: space-around; background: rgba(15, 23, 42, 0.6); padding: 12px 16px; border-radius: 8px; margin-top: 14px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 12px;" id="psg-summary-strip">
+            <div>Open Queries: <b id="psg-sum-q" style="color: #fbbf24;">0</b></div>
+            <div>Open Escalations: <b id="psg-sum-esc" style="color: #f87171;">0</b></div>
+            <div>Protocol Deviations: <b id="psg-sum-dev" style="color: #22d3ee;">0</b></div>
+            <div>Serious Events (AESHOSP=Y): <b id="psg-sum-sae" style="color: #ef4444;">0</b></div>
+            <div>Data Integrity Warnings: <b id="psg-sum-warn" style="color: #c084fc;">0</b></div>
+          </div>
+        </div>
+
+        <!-- 2. Patient Study Graph (Bar Chart Visualization) -->
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Patient Study Graph</span>
+            <span class="badge badge-info">Patient Study Activity Metrics</span>
+          </div>
+          <div style="height: 280px; position: relative;">
+            <canvas id="patientActivityChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 3. Laboratory Measurements (Separate Section) -->
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Laboratory Measurements</span>
+            <span class="badge badge-warning" id="psg-lab-badge">Unit Standardized / Integrity Audited</span>
+          </div>
+
+          <!-- Data Integrity Warning Box -->
+          <div id="psg-lab-warning-box" class="budget-alert-box" style="display: none; background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #f87171; margin-bottom: 12px;">
+            <b>Data Integrity Warning:</b> Possible unit mismatch detected (e.g. mg/dL vs mmol/L calibration shift). Value marked untrusted.
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Seq</th>
+                  <th>Test Code</th>
+                  <th>Value</th>
+                  <th>Unit</th>
+                  <th>Visit</th>
+                  <th>Date</th>
+                  <th>Trust Status</th>
+                  <th>Integrity Warning / Notes</th>
+                </tr>
+              </thead>
+              <tbody id="psg-labs-tbody">
+                <tr><td colspan="8" style="text-align: center;">No laboratory results recorded.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 4. Patient Timeline & Study Graph Relationship Split View -->
+        <div class="split-layout">
+          <!-- Patient Timeline -->
+          <div class="panel-card">
+            <div class="panel-title">Patient Timeline</div>
+            <div id="psg-timeline-container" style="display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto;">
+              <!-- Populated via app.js -->
+            </div>
+          </div>
+
+          <!-- Compact Node Relationship View -->
+          <div class="panel-card">
+            <div class="panel-title">Study Graph Relationship View</div>
+            <div id="psg-graph-vis-container" style="height: 340px; background: rgba(10, 14, 23, 0.7); border: 1px solid var(--border-color); border-radius: 8px;"></div>
+          </div>
+        </div>
+
+        <!-- 5. Adverse Events Section -->
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Adverse Events</span>
+            <span class="badge badge-danger">MONITOR Safety Rule (AESHOSP=Y)</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Seq</th>
+                  <th>Event Term</th>
+                  <th>Severity</th>
+                  <th>Onset Date</th>
+                  <th>AESHOSP</th>
+                  <th>AESER</th>
+                  <th>Protocol Seriousness</th>
+                  <th>Status</th>
+                  <th>Decision / Escalation</th>
+                </tr>
+              </thead>
+              <tbody id="psg-ae-tbody">
+                <tr><td colspan="9" style="text-align: center;">No adverse events recorded for this patient.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 6. Protocol Deviations Section -->
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Protocol Deviations</span>
+            <span class="badge badge-cyan">Dynamic Version Audit</span>
+          </div>
+
+          <!-- Protocol Change Detected Banner -->
+          <div id="psg-protocol-amendment-banner" class="budget-alert-box" style="display: none; background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.4); color: #22d3ee; margin-bottom: 12px;">
+            <b>Protocol Change Detected:</b> Compliance re-evaluated under active protocol version. Historical audit decisions preserved.
+          </div>
+
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Deviation Code</th>
+                  <th>Visit</th>
+                  <th>Protocol Version</th>
+                  <th>Severity</th>
+                  <th>Status</th>
+                  <th>Details / Rationale</th>
+                </tr>
+              </thead>
+              <tbody id="psg-deviations-tbody">
+                <tr><td colspan="6" style="text-align: center;">No protocol deviations logged for this patient.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 7. Data Queries & Escalations Split Layout -->
+        <div class="split-layout">
+          <!-- Data Queries -->
+          <div class="panel-card">
+            <div class="panel-title">Data Queries</div>
+            <div id="psg-queries-container" style="display: flex; flex-direction: column; gap: 10px;">
+              <p style="color: var(--text-muted); font-size: 13px;">No data queries dispatched for this patient.</p>
+            </div>
+          </div>
+
+          <!-- Escalations -->
+          <div class="panel-card">
+            <div class="panel-title">Escalations</div>
+            <div id="psg-escalations-container" style="display: flex; flex-direction: column; gap: 10px;">
+              <p style="color: var(--text-muted); font-size: 13px;">No safety escalations logged for this patient.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Decisions & Explanation Section -->
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Relevant Decision & Trace Audit</span>
+            <span class="badge badge-success">Immutable Traceability</span>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Decision ID</th>
+                  <th>Node</th>
+                  <th>Cut / PV</th>
+                  <th>Action Taken</th>
+                  <th>Why / Rationale</th>
+                  <th>Trace Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="psg-decisions-tbody">
+                <tr><td colspan="7" style="text-align: center;">No decision trace entries found for this patient.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 4: CUT TIMELINE -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-timeline">
+
+      <div class="split-layout">
+        <div class="panel-card">
+          <div class="panel-title">Findings & Escalation Trajectory (Cuts 1 - 12)</div>
+          <div style="height: 300px;">
+            <canvas id="findingsChart"></canvas>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-title">Data Queries & Protocol Deviations (Cuts 1 - 12)</div>
+          <div style="height: 300px;">
+            <canvas id="queriesChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-card" style="margin-top: 18px;">
+        <div class="panel-title">
+          <span>12-Cut Surveillance Audit Grid</span>
+          <span class="badge badge-success">Dynamic Protocol Versioning</span>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Cut</th>
+                <th>Protocol</th>
+                <th>New Findings</th>
+                <th>Resolved / Closed</th>
+                <th>Escalations</th>
+                <th>Site Queries</th>
+                <th>Deviations</th>
+                <th>Corrections</th>
+                <th>Adversarial Alerts</th>
+                <th>Budget Status</th>
+              </tr>
+            </thead>
+            <tbody id="timeline-grid-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 4: FINDINGS -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-findings">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Clinical & Data Quality Findings</span>
+          <div style="display: flex; gap: 10px;">
+            <select id="finding-cat-filter" class="btn btn-secondary" style="padding: 6px 10px;">
+              <option value="ALL">All Categories</option>
+              <option value="SAFETY">Safety</option>
+              <option value="DATA_QUALITY">Data Quality</option>
+              <option value="COMPLIANCE">Compliance</option>
+            </select>
+            <input type="text" id="finding-search-input" placeholder="Filter by subject, code, or site..." class="btn btn-secondary" style="width: 260px; text-align: left;">
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Finding Code</th>
+                <th>Category</th>
+                <th>Subject</th>
+                <th>Site</th>
+                <th>Severity</th>
+                <th>Clinical / Rule Rationale</th>
+                <th>Action / Decision</th>
+                <th>Explain</th>
+              </tr>
+            </thead>
+            <tbody id="findings-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 5: HUMAN GATE -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-human-gate">
+      
+      <!-- Interactive CLARIFY Walkthrough Banner -->
+      <div class="clarify-banner">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <span class="badge badge-purple" style="font-size: 11px;">INTERACTIVE DEMO</span>
+            <h3 style="font-size: 16px; color: white; display: inline-block; margin-left: 8px;">Human Monitor CLARIFY Resolution Flow</h3>
+          </div>
+          <button class="btn btn-primary" onclick="runClarifyInteractiveDemo()">▶ Run CLARIFY Graph Resolution</button>
+        </div>
+        <p style="font-size: 13px; color: #cbd5e1; margin-bottom: 12px;">
+          Demonstrates how the Human Gate handles a <code>CLARIFY</code> response differently from a <code>REJECTED</code> decision by querying the study graph for baseline screening labs & concomitant drugs, answering the monitor question, and resubmitting for immediate approval.
+        </p>
+        
+        <div id="clarify-demo-output" class="clarify-flow-container" style="display: none;">
+          <!-- Dynamically populated via app.js -->
+        </div>
+      </div>
+
+      <div class="panel-card" style="margin-top: 18px;">
+        <div class="panel-title">
+          <span>Medical Monitor Escalation Queue & Adjudication Cards</span>
+          <span class="badge badge-danger">Human Approval Required</span>
+        </div>
+        <div class="escalation-cards-container" id="escalation-cards-container">
+          <!-- Dynamically populated in app.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 6: CYCLE REPORT -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-cycle-report">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Sequential 6-Node Review Crew Execution Pipeline</span>
+          <span class="badge badge-info" id="cycle-report-title">Cut 12 Cycle Breakdown</span>
+        </div>
+
+        <div class="pipeline-container" id="pipeline-nodes-container">
+          <!-- Dynamically rendered 6 nodes -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 7: TRACE VIEWER -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-trace">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Append-Only Decision Trace Log (Immutable Trial Audit Trail)</span>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="trace-node-filter" class="btn btn-secondary" style="padding: 5px 10px;">
+              <option value="ALL">All Nodes</option>
+              <option value="detect">detect</option>
+              <option value="medical_review">medical_review</option>
+              <option value="data_manager">data_manager</option>
+              <option value="compliance">compliance</option>
+              <option value="human_gate">human_gate</option>
+              <option value="execute">execute</option>
+            </select>
+            <span class="badge badge-info" id="trace-count-badge">0 Entries</span>
+          </div>
+        </div>
+        <div class="table-responsive" style="max-height: 550px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Cut</th>
+                <th>Node</th>
+                <th>Decision ID</th>
+                <th>Subject</th>
+                <th>Site</th>
+                <th>Evidence Reference</th>
+                <th>Reason</th>
+                <th>Explain</th>
+              </tr>
+            </thead>
+            <tbody id="trace-table-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 8: EXPLAIN DECISION -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-explain">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Deterministic Decision Explainer (`explain(decision_id)`)</span>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="explain-input-id" placeholder="Enter Decision ID (e.g. DEC-EXEC-CUT12, DEC-MR-SAE-042-S02-004)..." class="btn btn-secondary" style="width: 360px; text-align: left;">
+            <button class="btn btn-primary" onclick="submitExplainForm()">Explain Decision</button>
+          </div>
+        </div>
+
+        <div class="explain-detail-card" id="explain-page-result">
+          <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+            Select any decision ID from Findings, Human Gate, or Trace to inspect its deterministic explanation and evidence verification.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 9: SITE RISK -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-site-risk">
+      <div class="panel-card">
+        <div class="panel-title">
+          <span>Clinical Site Risk Profiling & Issue Aggregation</span>
+          <span class="badge badge-purple">Automated Quality Scoring</span>
+        </div>
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Site ID</th>
+                <th>Total Issues Identified</th>
+                <th>Assessed Risk Tier</th>
+                <th>Safety Escalations</th>
+                <th>Data Queries</th>
+                <th>Latest Flagged Problem</th>
+                <th>Recommended Action</th>
+              </tr>
+            </thead>
+            <tbody id="site-risk-page-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 10: ADVERSARIAL EVENTS -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-adversarial">
+      <div class="adversarial-grid" id="adversarial-cards-grid">
+        <!-- 4 Specialized Cards: Regular Site, Unit Shift, Document Tampering, Protocol Amendment -->
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PAGE 11: BUDGET -->
+    <!-- ========================================================================= -->
+    <div class="tab-content" id="tab-budget">
+      <div class="split-layout">
+        <div class="panel-card">
+          <div class="panel-title">
+            <span>Global Resource & Computation Budget Tracking</span>
+            <span class="badge badge-success" id="budget-status-badge">TIER: FULL (0% Consumed)</span>
+          </div>
+          <div class="overview-metrics-summary" style="margin-top: 10px;">
+            <div class="overview-stat-row">
+              <span class="stat-name">Active Mode:</span>
+              <span class="stat-val text-success">FULL (Deterministic Checks & Narrative Active)</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">80% Degradation Threshold:</span>
+              <span class="stat-val text-warning">REDUCED (Expensive LLM work disabled; Safety active)</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">95% Degradation Threshold:</span>
+              <span class="stat-val text-danger">MINIMAL (Essential Graph & Trace Only)</span>
+            </div>
+            <div class="overview-stat-row">
+              <span class="stat-name">Total Execution Time:</span>
+              <span class="stat-val" id="budget-time-display">8.5s / 600.0s</span>
+            </div>
+          </div>
+          <div class="budget-alert-box" id="budget-degradation-note">
+            <b>Graceful Degradation Guarantee:</b> System maintains full deterministic safety monitoring, graph updates, compliance checks, adversarial detection, and trace recording across all 12 cuts without crashing.
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-title">Cumulative Budget Consumption Across 12 Cuts</div>
+          <div style="height: 260px;">
+            <canvas id="budgetChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Explain Modal Dialog -->
+  <div class="modal-overlay" id="explain-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h3 style="font-size: 18px; color: white;" id="modal-title">Decision Explanation</h3>
+          <span style="font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;" id="modal-decision-id">DEC-000</span>
+        </div>
+        <button class="close-btn" id="btn-close-modal">&times;</button>
+      </div>
+
+      <div class="explain-section">
+        <h4>What Action Was Taken</h4>
+        <div class="evidence-box" id="modal-what">Action description...</div>
+      </div>
+
+      <div class="explain-section">
+        <h4>Why (Clinical & Rule-Based Rationale)</h4>
+        <p id="modal-why" style="font-size: 14px; line-height: 1.6; color: #e5e7eb;">Rationale text...</p>
+      </div>
+
+      <div class="explain-section">
+        <h4>Cited Audit Evidence Lines (Domain / Subject / Record Sequence)</h4>
+        <div class="evidence-box" id="modal-evidence">Evidence lines...</div>
+      </div>
+
+      <div class="explain-section">
+        <h4>Alternatives Considered</h4>
+        <ul id="modal-alternatives" style="margin-left: 20px; font-size: 13px; color: var(--text-muted);"></ul>
+      </div>
+
+      <div class="explain-section" style="border-top: 1px solid var(--border-color); padding-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+        <span class="badge badge-success" id="modal-consistent-badge" style="font-size: 13px; padding: 6px 12px;">Explanation verified against trace (consistent_with_trace = True)</span>
+        <span style="font-size: 12px; color: var(--text-muted);" id="modal-meta-cut">Cut 12 | Protocol v3</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/static/js/graph.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
